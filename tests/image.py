@@ -1,7 +1,6 @@
 # python3 -m tests.image
 
-from src.openrouter import Message, OpenRouterClient
-from src.llms import gpt_4o_mini
+from src.openrouter import *
 from PIL import Image
 
 

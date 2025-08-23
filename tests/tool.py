@@ -1,7 +1,6 @@
 # python3 -m tests.tool
 
 from src.openrouter import *
-from src.tool import tool_model
 
 
 @tool_model

@@ -1,8 +1,6 @@
 # python3 -m tests.async
 
 from src.openrouter import *
-from src.tool import tool_model
-
 import asyncio
 
 
