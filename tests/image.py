@@ -1,7 +1,7 @@
 # python3 -m tests.image
 
-from src.OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from src.OpenRouterProvider.LLMs import gpt_4o_mini
+from src.Chatbot_manager import Chat_message, Chatbot_manager
+from src.LLMs import gpt_4o_mini
 from PIL import Image
 
 

@@ -1,7 +1,7 @@
 # python3 -m tests.tool
 
-from src.OpenRouterProvider.Chatbot_manager import *
-from src.OpenRouterProvider.Tool import tool_model
+from src.Chatbot_manager import *
+from src.Tool import tool_model
 
 
 @tool_model

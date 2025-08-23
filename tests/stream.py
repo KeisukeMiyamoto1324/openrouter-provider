@@ -1,6 +1,6 @@
 # python3 -m tests.stream
 
-from src.OpenRouterProvider.Chatbot_manager import *
+from src.Chatbot_manager import *
 
 
 ai = Chatbot_manager(system_prompt="Please answer in English.")

@@ -1,6 +1,6 @@
 # python3 -m tests.structured_output
 
-from src.OpenRouterProvider.Chatbot_manager import *
+from src.Chatbot_manager import *
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from datetime import datetime

@@ -1,6 +1,6 @@
 # python3 -m tests.provider
 
-from src.OpenRouterProvider.Chatbot_manager import *
+from src.Chatbot_manager import *
 
 ai = Chatbot_manager(system_prompt="Please answer in English.")
 query = Chat_message(text="Introduce yourself, please.")
