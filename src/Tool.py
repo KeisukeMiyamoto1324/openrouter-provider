@@ -1,10 +1,11 @@
+from __future__ import annotations
 import inspect
 from functools import wraps
-from typing import get_type_hints, get_origin, get_args
+from typing import get_type_hints, get_origin, get_args, Callable, Any, Dict
 
 
 class tool_model:
-    def __init__(self, func):
+    def __init__(self, func: Callable) -> None:
         self.func = func
         self.name = func.__name__
 
@@ -12,22 +13,20 @@ class tool_model:
         type_hints = get_type_hints(func)
 
         type_map = {
-            int:   "integer",
-            str:   "string",
+            int: "integer",
+            str: "string",
             float: "number",
-            bool:  "boolean",
+            bool: "boolean",
         }
 
-        properties = {}
-        required = []
+        properties: Dict[str, Dict[str, Any]] = {}
+        required: list[str] = []
 
-        # Build JSON schema properties
         for name, param in sig.parameters.items():
             anno = type_hints.get(name, None)
             origin = get_origin(anno)
 
             if origin is list:
-                # Handle list element types
                 (elem_type,) = get_args(anno)
                 json_item_type = type_map.get(elem_type, "string")
                 schema = {
@@ -36,7 +35,6 @@ class tool_model:
                     "description": name,
                 }
             else:
-                # Primitive types
                 json_type = type_map.get(anno, "string")
                 schema = {
                     "type": json_type,
@@ -47,7 +45,6 @@ class tool_model:
             if param.default is inspect._empty:
                 required.append(name)
 
-        # Attach tool definition metadata
         self.tool_definition = {
             "type": "function",
             "function": {
@@ -65,7 +62,7 @@ class tool_model:
 
         wraps(func)(self)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.func(*args, **kwargs)
     
     

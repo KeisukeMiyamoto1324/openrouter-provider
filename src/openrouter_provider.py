@@ -1,25 +1,18 @@
+from __future__ import annotations
+import os
+from dataclasses import dataclass, asdict
+from typing import List, Optional, Literal, Iterator, AsyncIterator
 
-# structured output
-# https://note.com/brave_quince241/n/n60a5759c8f05
-
-import logging
-from .message import *
-from .tool import tool_model
-from .llms import *
-
+from dotenv import load_dotenv
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
-from dotenv import load_dotenv
-import os, time
-from dataclasses import dataclass, field, asdict
-from typing import List, Optional, Literal, Iterator, AsyncIterator
-from pprint import pprint
 from pydantic import BaseModel
 
+from .message import Message, Role, ToolCall
+from .tool import tool_model
+from .llms import LLMModel
 
-# エラーのみ表示、詳細なトレースバック付き
-logging.basicConfig(level=logging.ERROR, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
+
 
 
 @dataclass
@@ -43,7 +36,7 @@ class OpenRouterProvider:
         load_dotenv()
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
-            logger.error("OPENROUTER_API_KEY is not set in environment variables.")
+            raise ValueError("OPENROUTER_API_KEY is not set in environment variables.")
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
@@ -54,7 +47,7 @@ class OpenRouterProvider:
         )
 
     def make_prompt(
-        self, 
+        self,
         system_prompt: Message,
         querys: list[Message]
     ) -> list[dict]:
@@ -100,168 +93,140 @@ class OpenRouterProvider:
         return messages
 
     def invoke(
-        self, 
-        model: LLMModel, 
-        system_prompt: Message, 
-        querys: list[Message], 
-        tools: list[tool_model] = [], 
+        self,
+        model: LLMModel,
+        system_prompt: Message,
+        querys: list[Message],
+        tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         temperature: float = 0.3
     ) -> Message:
-        try:
-            messages = self.make_prompt(system_prompt, querys)
+        tools = tools or []
+        messages = self.make_prompt(system_prompt, querys)
 
-            tool_defs = [tool.tool_definition for tool in tools] if tools else None
-            provider_dict = provider.to_dict() if provider else None
-            
-            response = self.client.chat.completions.create(
-                model=model.name,
-                temperature=temperature,
-                messages=messages,
-                tools=tool_defs,
-                extra_body={"provider": provider_dict},
-            )
+        tool_defs = [tool.tool_definition for tool in tools] if tools else None
+        provider_dict = provider.to_dict() if provider else None
+        
+        response = self.client.chat.completions.create(
+            model=model.name,
+            temperature=temperature,
+            messages=messages,
+            tools=tool_defs,
+            extra_body={"provider": provider_dict},
+        )
 
-            reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+        reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
 
-            if response.choices[0].message.tool_calls:
-                reply.role = Role.tool
-                for tool in response.choices[0].message.tool_calls:
-                    reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
-            return reply
-
-        except Exception as e:
-            print(e)
-            logger.exception(f"An error occurred while invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+        if response.choices[0].message.tool_calls:
+            reply.role = Role.tool
+            for tool in response.choices[0].message.tool_calls:
+                reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
+        return reply
         
     def invoke_stream(
-        self, 
-        model: LLMModel, 
-        system_prompt: Message, 
-        querys: list[Message], 
-        tools: list[tool_model] = [], 
+        self,
+        model: LLMModel,
+        system_prompt: Message,
+        querys: list[Message],
+        tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         temperature: float = 0.3
     ) -> Iterator[ChatCompletionChunk]:
-        # chunk example
-        # ChatCompletionChunk(id='gen-1746748260-mdKZLTs9QY7MmUxWKb8V', choices=[Choice(delta=ChoiceDelta(content='!', function_call=None, refusal=None, role='assistant', tool_calls=None), finish_reason=None, index=0, logprobs=None, native_finish_reason=None)], created=1746748260, model='openai/gpt-4o-mini', object='chat.completion.chunk', service_tier=None, system_fingerprint='fp_e2f22fdd96', usage=None, provider='OpenAI')
-        
-        # ChatCompletionChunk(id='gen-1746748260-mdKZLTs9QY7MmUxWKb8V', choices=[Choice(delta=ChoiceDelta(content='', function_call=None, refusal=None, role='assistant', tool_calls=None), finish_reason='stop', index=0, logprobs=None, native_finish_reason='stop')], created=1746748260, model='openai/gpt-4o-mini', object='chat.completion.chunk', service_tier=None, system_fingerprint='fp_e2f22fdd96', usage=None, provider='OpenAI')
-        
-        # ChatCompletionChunk(id='gen-1746748260-mdKZLTs9QY7MmUxWKb8V', choices=[Choice(delta=ChoiceDelta(content='', function_call=None, refusal=None, role='assistant', tool_calls=None), finish_reason=None, index=0, logprobs=None, native_finish_reason=None)], created=1746748260, model='openai/gpt-4o-mini', object='chat.completion.chunk', service_tier=None, system_fingerprint=None, usage=CompletionUsage(completion_tokens=54, prompt_tokens=61, total_tokens=115, completion_tokens_details=CompletionTokensDetails(reasoning_tokens=0), prompt_tokens_details={'cached_tokens': 0}), provider='OpenAI')
-        
-        try:
-            messages = self.make_prompt(system_prompt, querys)
+        tools = tools or []
+        messages = self.make_prompt(system_prompt, querys)
 
-            tool_defs = [tool.tool_definition for tool in tools] if tools else None
-            provider_dict = provider.to_dict() if provider else None
+        tool_defs = [tool.tool_definition for tool in tools] if tools else None
+        provider_dict = provider.to_dict() if provider else None
 
-            response = self.client.chat.completions.create(
-                model=model.name,
-                temperature=temperature,
-                messages=messages,
-                tools=tool_defs,
-                extra_body={"provider": provider_dict},
-                stream=True
-            )
-            
-            return response
-
-        except Exception as e:
-            logger.exception(f"An error occurred while invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+        response = self.client.chat.completions.create(
+            model=model.name,
+            temperature=temperature,
+            messages=messages,
+            tools=tool_defs,
+            extra_body={"provider": provider_dict},
+            stream=True
+        )
+        
+        return response
 
     async def async_invoke(
-        self, model: LLMModel, 
-        system_prompt: Message, 
-        querys: list[Message], 
-        tools: list[tool_model] = [], 
+        self,
+        model: LLMModel,
+        system_prompt: Message,
+        querys: list[Message],
+        tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         temperature: float = 0.3
     ) -> Message:
-        try:
-            messages = self.make_prompt(system_prompt, querys)
+        tools = tools or []
+        messages = self.make_prompt(system_prompt, querys)
 
-            tool_defs = [tool.tool_definition for tool in tools] if tools else None
-            provider_dict = provider.to_dict() if provider else None
+        tool_defs = [tool.tool_definition for tool in tools] if tools else None
+        provider_dict = provider.to_dict() if provider else None
 
-            response = await self.async_client.chat.completions.create(
-                model=model.name,
-                temperature=temperature,
-                messages=messages,
-                tools=tool_defs,
-                extra_body={"provider": provider_dict}
-            )
+        response = await self.async_client.chat.completions.create(
+            model=model.name,
+            temperature=temperature,
+            messages=messages,
+            tools=tool_defs,
+            extra_body={"provider": provider_dict}
+        )
 
-            reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+        reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
 
-            if response.choices[0].message.tool_calls:
-                reply.role = Role.tool
-                for tool in response.choices[0].message.tool_calls:
-                    reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
-            return reply
-
-        except Exception as e:
-            logger.exception(f"An error occurred while asynchronously invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+        if response.choices[0].message.tool_calls:
+            reply.role = Role.tool
+            for tool in response.choices[0].message.tool_calls:
+                reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
+        return reply
         
     async def async_invoke_stream(
         self,
         model: LLMModel,
         system_prompt: Message,
         querys: list[Message],
-        tools: list[tool_model] = [],
+        tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         temperature: float = 0.3
     ) -> AsyncIterator[ChatCompletionChunk]:
-        try:
-            messages = self.make_prompt(system_prompt, querys)
+        tools = tools or []
+        messages = self.make_prompt(system_prompt, querys)
 
-            tool_defs = [tool.tool_definition for tool in tools] if tools else None
-            provider_dict = provider.to_dict() if provider else None
+        tool_defs = [tool.tool_definition for tool in tools] if tools else None
+        provider_dict = provider.to_dict() if provider else None
 
-            response = await self.async_client.chat.completions.create(
-                model=model.name,
-                temperature=temperature,
-                messages=messages,
-                tools=tool_defs,
-                extra_body={"provider": provider_dict},
-                stream=True
-            )
+        response = await self.async_client.chat.completions.create(
+            model=model.name,
+            temperature=temperature,
+            messages=messages,
+            tools=tool_defs,
+            extra_body={"provider": provider_dict},
+            stream=True
+        )
 
-            async for chunk in response:
-                yield chunk
-
-        except Exception as e:
-            logger.exception(f"An error occurred while asynchronously streaming the model: {e.__class__.__name__}: {str(e)}")
-            return
+        async for chunk in response:
+            yield chunk
         
     def structured_output(
-        self, 
-        model: LLMModel, 
-        system_prompt: Message, 
-        querys: list[Message], 
-        provider: ProviderConfig = None, 
+        self,
+        model: LLMModel,
+        system_prompt: Message,
+        querys: list[Message],
+        provider: ProviderConfig = None,
         json_schema: BaseModel = None,
         temperature: float = 0.3
     ) -> BaseModel:
-        try:
-            messages = self.make_prompt(system_prompt, querys)
-            provider_dict = provider.to_dict() if provider else None
-            
-            response = self.client.chat.completions.create(
-                model=model.name,
-                temperature=temperature,
-                messages=messages,
-                response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": json_schema.model_json_schema()}},
-                extra_body={"provider": provider_dict},
-            )
+        messages = self.make_prompt(system_prompt, querys)
+        provider_dict = provider.to_dict() if provider else None
+        
+        response = self.client.chat.completions.create(
+            model=model.name,
+            temperature=temperature,
+            messages=messages,
+            response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": json_schema.model_json_schema()}},
+            extra_body={"provider": provider_dict},
+        )
 
-            return json_schema.model_validate_json(response.choices[0].message.content)
-
-        except Exception as e:
-            logger.exception(f"An error occurred while invoking structured output: {e.__class__.__name__}: {str(e)}")
-            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+        return json_schema.model_validate_json(response.choices[0].message.content)
         
     
