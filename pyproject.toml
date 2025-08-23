@@ -1,6 +1,6 @@
 [project]
 name = "openrouter-provider"
-version = "0.1.1"
+version = "1.0.0"
 description = "This is an unofficial wrapper of OpenRouter."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -13,22 +13,44 @@ authors = [
 dependencies = [
   "annotated-types",
   "anyio",
+  "build",
   "certifi",
+  "charset-normalizer",
   "distro",
+  "docutils",
   "h11",
   "httpcore",
   "httpx",
+  "id",
   "idna",
+  "jaraco.classes",
+  "jaraco.context",
+  "jaraco.functools",
   "jiter",
+  "keyring",
+  "markdown-it-py",
+  "mdurl",
+  "more-itertools",
+  "nh3",
   "openai",
+  "packaging",
   "pillow",
   "pydantic",
   "pydantic_core",
+  "Pygments",
+  "pyproject_hooks",
   "python-dotenv",
+  "readme_renderer",
+  "requests",
+  "requests-toolbelt",
+  "rfc3986",
+  "rich",
   "sniffio",
   "tqdm",
+  "twine",
   "typing-inspection",
-  "typing_extensions"
+  "typing_extensions",
+  "urllib3"
 ]
 
 [build-system]
