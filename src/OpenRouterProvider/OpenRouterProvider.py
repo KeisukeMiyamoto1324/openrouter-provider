@@ -131,6 +131,7 @@ class OpenRouterProvider:
             return reply
 
         except Exception as e:
+            print(e)
             logger.exception(f"An error occurred while invoking the model: {e.__class__.__name__}: {str(e)}")
             return Chat_message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
         
