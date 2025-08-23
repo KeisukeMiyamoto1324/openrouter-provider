@@ -1,9 +1,9 @@
 # python3 -m tests.provider
 
-from src.Chatbot_manager import *
+from src.openrouter import *
 
-ai = Chatbot_manager(system_prompt="Please answer in English.")
-query = Chat_message(text="Introduce yourself, please.")
+ai = OpenRouterClient(system_prompt="Please answer in English.")
+query = Message(text="Introduce yourself, please.")
 provider = ProviderConfig(order=["cerebras"], allow_fallbacks=False)
 response = ai.invoke(model=llama_4_scout, query=query, provider=provider)
 ai.print_memory()

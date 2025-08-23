@@ -1,7 +1,7 @@
 # python3 -m tests.async
 
-from src.Chatbot_manager import *
-from src.Tool import tool_model
+from src.openrouter import *
+from src.tool import tool_model
 
 import asyncio
 
@@ -19,8 +19,8 @@ def user_info():
     return f"name: {name}\nage: {age}\naddress: {address}"
 
 async def test_async_invoke_stream():
-    ai = Chatbot_manager(system_prompt="Please answer in English.")
-    query = Chat_message(text="Tell me three interesting facts about space.")
+    ai = OpenRouterClient(system_prompt="Please answer in English.")
+    query = Message(text="Tell me three interesting facts about space.")
     
     print("\n--- Streaming Response ---")
     async for token in ai.async_invoke_stream(model=gpt_4o_mini, query=query):
@@ -28,13 +28,13 @@ async def test_async_invoke_stream():
     print()  # 改行
 
 async def main():
-    ai1 = Chatbot_manager(system_prompt="Please answer in English.", tools=[user_info])
-    ai2 = Chatbot_manager(system_prompt="Please answer in English.", tools=[user_info])
-    ai3 = Chatbot_manager(system_prompt="Please answer in English.", tools=[user_info])
+    ai1 = OpenRouterClient(system_prompt="Please answer in English.", tools=[user_info])
+    ai2 = OpenRouterClient(system_prompt="Please answer in English.", tools=[user_info])
+    ai3 = OpenRouterClient(system_prompt="Please answer in English.", tools=[user_info])
     
-    query1 = Chat_message(text="What is the user's name?")
-    query2 = Chat_message(text="What is the user's age?")
-    query3 = Chat_message(text="What is the user's address?")
+    query1 = Message(text="What is the user's name?")
+    query2 = Message(text="What is the user's age?")
+    query3 = Message(text="What is the user's address?")
 
     responses = await asyncio.gather(
         # ai1.async_invoke(model=gpt_4o_mini, query=query1),

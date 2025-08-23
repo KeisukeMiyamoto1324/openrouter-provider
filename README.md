@@ -41,23 +41,25 @@ pip3 install .
 
 ## Usage
 
+**Note**: The examples below show imports for development/source usage. When using the installed package from PyPI, replace `src.` with `openrouter_provider.` in all import statements.
+
 ### Basic chat bot
-Chat history is automatically sent, by Chatbot_manager. If you want to delete chat history, use `clear_memory` method.
+Chat history is automatically sent, by OpenRouterClient. If you want to delete chat history, use `clear_memory` method.
 
 ```python
-from OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from OpenRouterProvider.LLMs import gpt_4o_mini
+from src.OpenRouterClient import Message, OpenRouterClient
+from src.LLMs import gpt_4o_mini
 
 # Declare chat bot
-ai = Chatbot_manager(system_prompt="Please answer in English.")
+ai = OpenRouterClient(system_prompt="Please answer in English.")
 
 # Send query
-query = Chat_message(text="Introduce yourself, please.")
+query = Message(text="Introduce yourself, please.")
 response = ai.invoke(model=gpt_4o_mini, query=query)
 print(response.text)
 
-# Send next query. Chatbot_manager automatically handle chat history.
-query = Chat_message(text="Tell me a short story.")
+# Send next query. OpenRouterClient automatically handle chat history.
+query = Message(text="Tell me a short story.")
 response = ai.invoke(model=gpt_4o_mini, query=query)
 print(response.text)
 
@@ -72,16 +74,16 @@ ai.clear_memory()
 You can use images in the chat.
 
 ```python
-from OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from OpenRouterProvider.LLMs import gpt_4o_mini
+from src.OpenRouterClient import Message, OpenRouterClient
+from src.LLMs import gpt_4o_mini
 from PIL import Image
 
 dog = Image.open("dog.jpg")
 cat = Image.open("cat.jpg")
 
 # Send query with images
-ai = Chatbot_manager(system_prompt="Please answer in English.")
-query = Chat_message(text="What can you see in the images?", images=[dog, cat])
+ai = OpenRouterClient(system_prompt="Please answer in English.")
+query = Message(text="What can you see in the images?", images=[dog, cat])
 response = ai.invoke(model=gpt_4o_mini, query=query)
 print(response.text) 
 ```
@@ -91,9 +93,9 @@ print(response.text)
 Use the `@tool_model` decorator to expose Python functions as callable tools in the chat. Tools are automatically processed by Chat_manager, so you don't need to care it.
 
 ```python
-from OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from OpenRouterProvider.LLMs import gpt_4o_mini
-from OpenRouterProvider.Tool import tool_model
+from src.OpenRouterClient import Message, OpenRouterClient
+from src.LLMs import gpt_4o_mini
+from src.Tool import tool_model
 
 @tool_model
 def get_user_info():
@@ -102,8 +104,8 @@ def get_user_info():
     """
     return "name: Alice\nage: 30\naddress: Wonderland"
 
-ai = Chatbot_manager(system_prompt="Please answer in English.", tools=[get_user_info])
-query = Chat_message(text="What is the name, age, address of the user?")
+ai = OpenRouterClient(system_prompt="Please answer in English.", tools=[get_user_info])
+query = Message(text="What is the name, age, address of the user?")
 response = ai.invoke(model=gpt_4o_mini, query=query)
 ai.print_memory()
 ```
@@ -115,17 +117,17 @@ You can use prebuilt models defined or declare your own custom models easily.
 This library provides many ready-to-use models from OpenAI, Anthropic, Google, and others.
 
 ```python
-from OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from OpenRouterProvider.LLMs import gpt_4o, claude_3_7_sonnet
+from src.OpenRouterClient import Message, OpenRouterClient
+from src.LLMs import gpt_4o, claude_3_7_sonnet
 
 # Use OpenAI GPT-4o
-ai = Chatbot_manager(system_prompt="Please answer in English.")
-query = Chat_message(text="Tell me a joke.")
+ai = OpenRouterClient(system_prompt="Please answer in English.")
+query = Message(text="Tell me a joke.")
 response = ai.invoke(model=gpt_4o, query=query)
 print(response.text)
 
 # Use Anthropic Claude 3.7 Sonnet
-query = Chat_message(text="Summarize the story of Hamlet.")
+query = Message(text="Summarize the story of Hamlet.")
 response = ai.invoke(model=claude_3_7_sonnet, query=query)
 print(response.text)
 ```
@@ -186,8 +188,8 @@ All of them are instances of `LLMModel`, which includes cost and model name sett
 You can define and use your own custom model if it's available on OpenRouter.
 
 ```python
-from OpenRouterProvider.Chatbot_manager import Chat_message, Chatbot_manager
-from OpenRouterProvider.LLMs import LLMModel
+from src.OpenRouterClient import Message, OpenRouterClient
+from src.LLMs import LLMModel
 
 # Declare a custom model
 my_model = LLMModel(
@@ -197,8 +199,8 @@ my_model = LLMModel(
 )
 
 # Use the custom model
-ai = Chatbot_manager(system_prompt="Please answer in English.")
-query = Chat_message(text="Explain black holes simply.")
+ai = OpenRouterClient(system_prompt="Please answer in English.")
+query = Message(text="Explain black holes simply.")
 response = ai.invoke(model=my_model, query=query)
 print(response.text)
 ```

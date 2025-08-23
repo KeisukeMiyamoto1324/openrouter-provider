@@ -1,6 +1,6 @@
 # python3 -m tests.structured_output
 
-from src.Chatbot_manager import *
+from src.openrouter import *
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional
 from datetime import datetime
@@ -40,8 +40,8 @@ class MeetingEvent(BaseModel):
     tags: Optional[List[str]] = Field(default_factory=list, description="Optional tags or labels for the meeting")
 
 
-ai = Chatbot_manager(system_prompt="Please answer in English.")
-query = Chat_message(text="Introduce yourself, please.")
+ai = OpenRouterClient(system_prompt="Please answer in English.")
+query = Message(text="Introduce yourself, please.")
 response:MeetingEvent = ai.structured_output(model=gpt_4o_mini, query=query, json_schema=MeetingEvent)
 print(response)
 

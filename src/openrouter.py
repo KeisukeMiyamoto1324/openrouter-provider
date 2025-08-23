@@ -1,6 +1,6 @@
-from .Chat_message import *
-from .OpenRouterProvider import *
-from .LLMs import LLMModel
+from .message import *
+from .openrouter_provider import *
+from .llms import LLMModel
 
 from dotenv import load_dotenv
 import time
@@ -18,11 +18,11 @@ You are an intelligent AI. You must follow the system_instruction below, which i
 </system_instruction>
 """
 
-class Chatbot_manager:
+class OpenRouterClient:
     def __init__(self, system_prompt:str="", tools:list[tool_model]=[]) -> None:
         load_dotenv()
         
-        self._memory: list[Chat_message] = []
+        self._memory: list[Message] = []
         self.tools: list[tool_model] = tools
         self.set_system_prompt(prompt=system_prompt)
         
@@ -33,7 +33,7 @@ class Chatbot_manager:
         system_prompt = system_prompt.replace("[TIME]", f"{m}/{d}/{y}")
         system_prompt = system_prompt.replace("[SYSTEM_INSTRUCTION]", prompt)
         
-        self._system_prompt = Chat_message(text=system_prompt, role=Role.system)
+        self._system_prompt = Message(text=system_prompt, role=Role.system)
         
     def clear_memory(self):
         self._memory = []
@@ -86,11 +86,11 @@ class Chatbot_manager:
     def invoke(
         self, 
         model: LLMModel, 
-        query: Chat_message, 
+        query: Message, 
         tools: list[tool_model]=[], 
         provider:ProviderConfig=None,
         temperature: float=0.3
-    ) -> Chat_message:
+    ) -> Message:
         self._memory.append(query)
         client = OpenRouterProvider()
         reply = client.invoke(
@@ -135,7 +135,7 @@ class Chatbot_manager:
     def invoke_stream(
         self, 
         model: LLMModel, 
-        query: Chat_message, 
+        query: Message, 
         tools: list[tool_model]=[], 
         provider:ProviderConfig=None,
         temperature: float=0.3
@@ -156,16 +156,16 @@ class Chatbot_manager:
             text += token.choices[0].delta.content
             yield token.choices[0].delta.content
 
-        self._memory.append(Chat_message(text=text, role=Role.ai, answerdBy=LLMModel))
+        self._memory.append(Message(text=text, role=Role.ai, answerdBy=LLMModel))
         
     async def async_invoke(
         self, 
         model: LLMModel, 
-        query: Chat_message, 
+        query: Message, 
         tools: list[tool_model] = [], 
         provider: ProviderConfig = None,
         temperature: float=0.3
-    ) -> Chat_message:
+    ) -> Message:
         self._memory.append(query)
         client = OpenRouterProvider()
         reply = await client.async_invoke(
@@ -209,7 +209,7 @@ class Chatbot_manager:
     async def async_invoke_stream(
         self, 
         model: LLMModel, 
-        query: Chat_message, 
+        query: Message, 
         tools: list[tool_model] = [], 
         provider: ProviderConfig = None,
         temperature: float=0.3
@@ -232,12 +232,12 @@ class Chatbot_manager:
             text += delta
             yield delta
 
-        self._memory.append(Chat_message(text=text, role=Role.ai, answerdBy=model))
+        self._memory.append(Message(text=text, role=Role.ai, answerdBy=model))
         
     def structured_output(
         self, 
         model: LLMModel, 
-        query: Chat_message, 
+        query: Message, 
         provider:ProviderConfig=None, 
         json_schema: BaseModel=None,
         temperature: float=0.3

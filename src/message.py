@@ -1,4 +1,4 @@
-from .LLMs import LLMModel
+from .llms import LLMModel
 
 from enum import Enum
 from PIL import Image
@@ -25,7 +25,7 @@ class ToolCall:
     result: any = ""
 
 
-class Chat_message:
+class Message:
     def __init__(self, 
                  text: str, 
                  images: list[Image.Image]=None, 

@@ -3,9 +3,9 @@
 # https://note.com/brave_quince241/n/n60a5759c8f05
 
 import logging
-from .Chat_message import *
-from .Tool import tool_model
-from .LLMs import *
+from .message import *
+from .tool import tool_model
+from .llms import *
 
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
@@ -55,8 +55,8 @@ class OpenRouterProvider:
 
     def make_prompt(
         self, 
-        system_prompt: Chat_message,
-        querys: list[Chat_message]
+        system_prompt: Message,
+        querys: list[Message]
     ) -> list[dict]:
         messages = [{"role": "system", "content": system_prompt.text}]
 
@@ -102,12 +102,12 @@ class OpenRouterProvider:
     def invoke(
         self, 
         model: LLMModel, 
-        system_prompt: Chat_message, 
-        querys: list[Chat_message], 
+        system_prompt: Message, 
+        querys: list[Message], 
         tools: list[tool_model] = [], 
         provider: ProviderConfig = None,
         temperature: float = 0.3
-    ) -> Chat_message:
+    ) -> Message:
         try:
             messages = self.make_prompt(system_prompt, querys)
 
@@ -122,7 +122,7 @@ class OpenRouterProvider:
                 extra_body={"provider": provider_dict},
             )
 
-            reply = Chat_message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+            reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
 
             if response.choices[0].message.tool_calls:
                 reply.role = Role.tool
@@ -133,13 +133,13 @@ class OpenRouterProvider:
         except Exception as e:
             print(e)
             logger.exception(f"An error occurred while invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Chat_message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
         
     def invoke_stream(
         self, 
         model: LLMModel, 
-        system_prompt: Chat_message, 
-        querys: list[Chat_message], 
+        system_prompt: Message, 
+        querys: list[Message], 
         tools: list[tool_model] = [], 
         provider: ProviderConfig = None,
         temperature: float = 0.3
@@ -170,16 +170,16 @@ class OpenRouterProvider:
 
         except Exception as e:
             logger.exception(f"An error occurred while invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Chat_message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
 
     async def async_invoke(
         self, model: LLMModel, 
-        system_prompt: Chat_message, 
-        querys: list[Chat_message], 
+        system_prompt: Message, 
+        querys: list[Message], 
         tools: list[tool_model] = [], 
         provider: ProviderConfig = None,
         temperature: float = 0.3
-    ) -> Chat_message:
+    ) -> Message:
         try:
             messages = self.make_prompt(system_prompt, querys)
 
@@ -194,7 +194,7 @@ class OpenRouterProvider:
                 extra_body={"provider": provider_dict}
             )
 
-            reply = Chat_message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+            reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
 
             if response.choices[0].message.tool_calls:
                 reply.role = Role.tool
@@ -204,13 +204,13 @@ class OpenRouterProvider:
 
         except Exception as e:
             logger.exception(f"An error occurred while asynchronously invoking the model: {e.__class__.__name__}: {str(e)}")
-            return Chat_message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
         
     async def async_invoke_stream(
         self,
         model: LLMModel,
-        system_prompt: Chat_message,
-        querys: list[Chat_message],
+        system_prompt: Message,
+        querys: list[Message],
         tools: list[tool_model] = [],
         provider: ProviderConfig = None,
         temperature: float = 0.3
@@ -240,8 +240,8 @@ class OpenRouterProvider:
     def structured_output(
         self, 
         model: LLMModel, 
-        system_prompt: Chat_message, 
-        querys: list[Chat_message], 
+        system_prompt: Message, 
+        querys: list[Message], 
         provider: ProviderConfig = None, 
         json_schema: BaseModel = None,
         temperature: float = 0.3
@@ -262,6 +262,6 @@ class OpenRouterProvider:
 
         except Exception as e:
             logger.exception(f"An error occurred while invoking structured output: {e.__class__.__name__}: {str(e)}")
-            return Chat_message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
+            return Message(text="Fail to get response. Please see the error message.", role=Role.ai, raw_response=None)
         
     
