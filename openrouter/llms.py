@@ -34,9 +34,8 @@ claude_4_1_opus = LLMModel(name='anthropic/claude-opus-4.1', input_cost=15, outp
 # Google
 gemini_2_0_flash = LLMModel(name='google/gemini-2.0-flash-001', input_cost=0.1, output_cost=0.4)
 gemini_2_5_flash_lite = LLMModel(name='google/gemini-2.5-flash-lite', input_cost=0.1, output_cost=0.4)
-gemini_2_5_flash = LLMModel(name='google/gemini-2.5-flash-preview', input_cost=0.15, output_cost=0.60)
-gemini_2_5_flash_thinking = LLMModel(name='google/gemini-2.5-flash-preview:thinking', input_cost=0.15, output_cost=3.5)
-gemini_2_5_pro = LLMModel(name='google/gemini-2.5-pro-preview-03-25', input_cost=1.25, output_cost=10)
+gemini_2_5_flash = LLMModel(name='google/gemini-2.5-flash', input_cost=0.3, output_cost=2.5)
+gemini_2_5_pro = LLMModel(name='google/gemini-2.5-pro', input_cost=1.25, output_cost=10)
 
 # Deepseek
 deepseek_v3_free = LLMModel(name='deepseek/deepseek-chat-v3-0324:free', input_cost=0, output_cost=0)

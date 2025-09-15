@@ -6,10 +6,10 @@ from typing import Iterator, AsyncIterator
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from .llms import *
-from .message import *
-from .openrouter_provider import *
-from .tool import *
+from openrouter.llms import *
+from openrouter.message import *
+from openrouter.openrouter_provider import *
+from openrouter.tool import *
 
 
 _base_system_prompt = """

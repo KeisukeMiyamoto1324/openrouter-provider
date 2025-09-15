@@ -1,6 +1,6 @@
 # python3 -m tests.provider
 
-from src.openrouter import *
+from openrouter.openrouter import *
 
 ai = OpenRouterClient(system_prompt="Please answer in English.")
 query = Message(text="Introduce yourself, please.")

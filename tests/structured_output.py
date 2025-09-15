@@ -1,7 +1,7 @@
 # python3 -m tests.structured_output
 
-from src.openrouter import *
-from pydantic import BaseModel, Field, HttpUrl
+from openrouter.openrouter import *
+from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -18,7 +18,7 @@ class Location(BaseModel):
     name: str = Field(..., description="Name of the meeting location (physical or virtual)")
     address: str = Field(..., description="Full address of the location")
     online: bool = Field(False, description="Indicates if the meeting is online")
-    link: Optional[HttpUrl] = Field(
+    link: Optional[str] = Field(
         default=None,
         description="URL link for the online meeting (used only if online is True)"
     )
@@ -42,6 +42,6 @@ class MeetingEvent(BaseModel):
 
 ai = OpenRouterClient(system_prompt="Please answer in English.")
 query = Message(text="Introduce yourself, please.")
-response:MeetingEvent = ai.structured_output(model=gpt_4o_mini, query=query, json_schema=MeetingEvent)
+response:MeetingEvent = ai.structured_output(model=gpt_5_mini, query=query, json_schema=MeetingEvent)
 print(response)
 

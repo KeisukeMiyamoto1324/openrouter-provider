@@ -1,6 +1,6 @@
 # python3 -m tests.image
 
-from src.openrouter import *
+from openrouter.openrouter import *
 from PIL import Image
 
 

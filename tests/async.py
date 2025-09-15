@@ -1,6 +1,6 @@
 # python3 -m tests.async
 
-from src.openrouter import *
+from openrouter.openrouter import *
 import asyncio
 
 

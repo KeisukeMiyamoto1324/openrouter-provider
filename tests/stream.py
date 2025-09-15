@@ -1,6 +1,6 @@
 # python3 -m tests.stream
 
-from src.openrouter import *
+from openrouter.openrouter import *
 
 
 ai = OpenRouterClient(system_prompt="Please answer in English.")

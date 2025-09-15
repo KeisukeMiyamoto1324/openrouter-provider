@@ -8,7 +8,7 @@ from typing import Optional, Any
 from PIL import Image
 from openai.types.chat import ChatCompletion
 
-from .llms import LLMModel
+from openrouter.llms import LLMModel
 
 
 class Role(Enum):

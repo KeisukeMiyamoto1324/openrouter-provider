@@ -8,9 +8,9 @@ from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel
 
-from .message import Message, Role, ToolCall
-from .tool import tool_model
-from .llms import LLMModel
+from openrouter.message import Message, Role, ToolCall
+from openrouter.tool import tool_model
+from openrouter.llms import LLMModel
 
 
 
