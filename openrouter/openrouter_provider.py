@@ -219,11 +219,25 @@ class OpenRouterProvider:
         messages = self.make_prompt(system_prompt, querys)
         provider_dict = provider.to_dict() if provider else None
         
+        schema = json_schema.model_json_schema()
+        
+        def add_additional_properties_false(obj):
+            if isinstance(obj, dict):
+                if "properties" in obj:
+                    obj["additionalProperties"] = False
+                for value in obj.values():
+                    add_additional_properties_false(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    add_additional_properties_false(item)
+        
+        add_additional_properties_false(schema)
+        
         response = self.client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
-            response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": json_schema.model_json_schema()}},
+            response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": schema}},
             extra_body={"provider": provider_dict},
         )
 

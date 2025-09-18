@@ -3,45 +3,47 @@
 from openrouter.openrouter import *
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
 
 
-class Participant(BaseModel):
-    name: str = Field(..., description="Name of the participant")
-    email: str = Field(..., description="Email address of the participant")
-    role: Optional[str] = Field(
-        default="attendee", 
-        description="Role of the participant in the meeting (e.g. host, speaker, attendee)"
+class StatItem(BaseModel):
+    number: str = Field(
+        description="Large numeric value to display prominently (e.g., '85%', '150M', '2.5K')"
+    )
+    label: str = Field(
+        description="Short category or metric name for the statistic (e.g., 'Success Rate', 'Users', 'Revenue')"
+    )
+    description: str = Field(
+        description="Brief explanatory text providing context for the statistic (1-2 sentences)"
     )
 
-class Location(BaseModel):
-    name: str = Field(..., description="Name of the meeting location (physical or virtual)")
-    address: str = Field(..., description="Full address of the location")
-    online: bool = Field(False, description="Indicates if the meeting is online")
-    link: Optional[str] = Field(
-        default=None,
-        description="URL link for the online meeting (used only if online is True)"
-    )
 
-class MeetingSettings(BaseModel):
-    recorded: bool = Field(..., description="Whether the meeting will be recorded")
-    allow_guest: bool = Field(..., description="Whether guests (not in the participant list) are allowed")
-    max_duration_minutes: int = Field(
-        ..., 
-        gt=0,
-        description="Maximum allowed duration of the meeting in minutes"
+class Template1Data(BaseModel):
+    title: str = Field(
+        description="HTML page title that appears in browser tab"
     )
-
-class MeetingEvent(BaseModel):
-    title: str = Field(..., description="Title or subject of the meeting")
-    participants: List[Participant] = Field(..., description="List of all participants in the meeting")
-    location: Location = Field(..., description="Location details of the meeting")
-    settings: MeetingSettings = Field(..., description="Configuration and rules for the meeting")
-    tags: Optional[List[str]] = Field(default_factory=list, description="Optional tags or labels for the meeting")
+    main_title: str = Field(
+        description="Large prominent heading text displayed at the top of the slide"
+    )
+    subtitle: str = Field(
+        description="Secondary heading text that appears below the main title"
+    )
+    description: str = Field(
+        description="Main body text paragraph that provides detailed explanation or context (2-3 sentences recommended)"
+    )
+    additional_text: str = Field(
+        description="Secondary body text paragraph for additional information or supporting details (1-2 sentences)"
+    )
+    stats: List[StatItem] = Field(
+        description="List of key statistics or metrics to display on the right side of the slide (2-4 items recommended)"
+    )
 
 
 ai = OpenRouterClient(system_prompt="Please answer in English.")
-query = Message(text="Introduce yourself, please.")
-response:MeetingEvent = ai.structured_output(model=gpt_5_mini, query=query, json_schema=MeetingEvent)
+query = Message(text="Tell me about yourself as if you were a person with a name, age, occupation, and hobbies.")
+response: Template1Data = ai.structured_output(model=gpt_5_mini, query=query, json_schema=Template1Data)
+print(response)
+
+query = Message(text="Use different persona and Tell me again.")
+response: Template1Data = ai.structured_output(model=gpt_5_mini, query=query, json_schema=Template1Data)
 print(response)
 

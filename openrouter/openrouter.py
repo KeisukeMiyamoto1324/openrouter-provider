@@ -248,4 +248,7 @@ class OpenRouterClient:
             provider=provider,
             json_schema=json_schema
         )
+        
+        self._memory.append(Message(text=reply.model_dump_json(), role=Role.ai, answered_by=model))
+        
         return reply

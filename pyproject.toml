@@ -1,6 +1,6 @@
 [project]
 name = "openrouter-provider"
-version = "1.0.3"
+version = "1.0.4"
 description = "This is an unofficial wrapper of OpenRouter."
 readme = "README.md"
 requires-python = ">=3.7"
