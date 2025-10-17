@@ -122,6 +122,8 @@ class OpenRouterProvider:
             for tool in response.choices[0].message.tool_calls:
                 reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
+    
+    
         
     def invoke_stream(
         self,

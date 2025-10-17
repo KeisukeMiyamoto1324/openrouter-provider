@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json
 import time
+from copy import deepcopy
 from typing import Iterator, AsyncIterator
 
 from dotenv import load_dotenv
@@ -35,9 +36,28 @@ class OpenRouterClient:
         system_prompt = _base_system_prompt
         system_prompt = system_prompt.replace("[TIME]", f"{month}/{day}/{year}")
         system_prompt = system_prompt.replace("[SYSTEM_INSTRUCTION]", prompt)
-        
+
         self._system_prompt = Message(text=system_prompt, role=Role.system)
-        
+
+    def _execute_tools(self, reply: Message, tools: list[tool_model]) -> Message:
+        if not reply.tool_calls:
+            return reply
+
+        reply_copy = deepcopy(reply)
+
+        for requested_tool in reply_copy.tool_calls:
+            args = requested_tool.arguments
+            if isinstance(args, str):
+                args = json.loads(args)
+
+            for tool in tools:
+                if tool.name == requested_tool.name:
+                    result = tool(**args)
+                    requested_tool.result = result
+                    break
+
+        return reply_copy
+
     def clear_memory(self) -> None:
         self._memory = []
         
@@ -88,7 +108,7 @@ class OpenRouterClient:
         tools = tools or []
         self._memory.append(query)
         client = OpenRouterProvider()
-        
+
         reply = client.invoke(
             model=model,
             temperature=temperature,
@@ -98,22 +118,8 @@ class OpenRouterClient:
             provider=provider,
         )
         reply.answered_by = model
+        reply = self._execute_tools(reply, self.tools + tools)
         self._memory.append(reply)
-
-        # Execute tools
-        if reply.tool_calls:
-            for requested_tool in reply.tool_calls:
-                args = requested_tool.arguments
-                if isinstance(args, str):
-                    args = json.loads(args)
-
-                for tool in (self.tools + tools):
-                    if tool.name == requested_tool.name:
-                        result = tool(**args)
-                        requested_tool.result = result
-                        break
-                else:
-                    return reply
 
         return reply
     
@@ -167,18 +173,7 @@ class OpenRouterClient:
         self._memory.append(reply)
 
         if reply.tool_calls:
-            for requested_tool in reply.tool_calls:
-                args = requested_tool.arguments
-                if isinstance(args, str):
-                    args = json.loads(args)
-
-                for tool in (self.tools + tools):
-                    if tool.name == requested_tool.name:
-                        result = tool(**args)
-                        requested_tool.result = result
-                        break
-                else:
-                    return reply
+            reply = self._execute_tools(reply, self.tools + tools)
 
             reply = await client.async_invoke(
                 model=model,
