@@ -58,6 +58,35 @@ class OpenRouterClient:
 
         return reply_copy
 
+    def execute_tool(self, reply: Message, tool_index: int) -> Message:
+        if not reply.tool_calls:
+            return reply
+
+        if tool_index < 0 or tool_index >= len(reply.tool_calls):
+            raise IndexError(f"Tool index {tool_index} is out of range. Available tools: {len(reply.tool_calls)}")
+
+        requested_tool = reply.tool_calls[tool_index]
+
+        args = requested_tool.arguments
+        if isinstance(args, str):
+            args = json.loads(args)
+
+        all_tools = self.tools
+        for tool in all_tools:
+            if tool.name == requested_tool.name:
+                result = tool(**args)
+                requested_tool.result = result
+                break
+        else:
+            raise ValueError(f"Tool '{requested_tool.name}' not found in registered tools")
+
+        for i, msg in enumerate(self._memory):
+            if msg.id == reply.id:
+                self._memory[i] = reply
+                break
+
+        return reply
+
     def clear_memory(self) -> None:
         self._memory = []
         
@@ -100,13 +129,15 @@ class OpenRouterClient:
     def invoke(
         self,
         model: LLMModel,
-        query: Message,
+        query: Message = None,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        auto_tool_exec: bool = True
     ) -> Message:
         tools = tools or []
-        self._memory.append(query)
+        if query is not None:
+            self._memory.append(query)
         client = OpenRouterProvider()
 
         reply = client.invoke(
@@ -118,8 +149,21 @@ class OpenRouterClient:
             provider=provider,
         )
         reply.answered_by = model
-        reply = self._execute_tools(reply, self.tools + tools)
         self._memory.append(reply)
+
+        if auto_tool_exec and reply.tool_calls:
+            reply = self._execute_tools(reply, self.tools + tools)
+            self._memory[-1] = reply
+
+            reply = client.invoke(
+                model=model,
+                temperature=temperature,
+                system_prompt=self._system_prompt,
+                querys=self._memory,
+                provider=provider
+            )
+            reply.answered_by = model
+            self._memory.append(reply)
 
         return reply
     
@@ -153,13 +197,15 @@ class OpenRouterClient:
     async def async_invoke(
         self,
         model: LLMModel,
-        query: Message,
+        query: Message = None,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        auto_tool_exec: bool = True
     ) -> Message:
         tools = tools or []
-        self._memory.append(query)
+        if query is not None:
+            self._memory.append(query)
         client = OpenRouterProvider()
         reply = await client.async_invoke(
             model=model,
@@ -172,7 +218,7 @@ class OpenRouterClient:
         reply.answered_by = model
         self._memory.append(reply)
 
-        if reply.tool_calls:
+        if auto_tool_exec and reply.tool_calls:
             reply = self._execute_tools(reply, self.tools + tools)
 
             reply = await client.async_invoke(

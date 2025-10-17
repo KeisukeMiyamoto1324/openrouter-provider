@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 import base64
+import uuid
 from typing import Optional, Any
 
 from PIL import Image
@@ -34,8 +35,10 @@ class Message:
         images: Optional[list[Image.Image]] = None,
         role: Role = Role.user,
         answered_by: Optional[LLMModel] = None,
-        raw_response: Optional[ChatCompletion] = None
+        raw_response: Optional[ChatCompletion] = None,
+        id: Optional[str] = None
     ) -> None:
+        self.id = id if id is not None else str(uuid.uuid4())
         self.role = role
         self.text = text
         self.images = self._process_image(images)

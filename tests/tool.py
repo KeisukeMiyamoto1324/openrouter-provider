@@ -4,20 +4,30 @@ from openrouter.openrouter import *
 
 
 @tool_model
-def user_info():
-    """
-    Return user's personal info, such as name, age and address.
-    """
-    
-    name = "Satoshi Tanaka"
-    age = "43"
-    address = "Italy"
-    
-    return f"name: {name}\nage: {age}\naddress: {address}"
+def get_weather(location: str) -> str:
+    return f"{location}: Sunny, 25°C"
 
-ai = OpenRouterClient(system_prompt="Please answer in English.", tools=[user_info])
-query = Message(text="What is the name, age, address of the user?")
-response = ai.invoke(model=gpt_4o_mini, query=query)
-ai.print_memory()
+
+print("=== Auto Tool Execution (auto_tool_exec=True) ===")
+ai = OpenRouterClient(tools=[get_weather])
+response = ai.invoke(model=gpt_4o_mini, query=Message("What's the weather in Tokyo?"), auto_tool_exec=True)
+print(f"Response: {response.text}\n")
+
+
+print("=== Manual Tool Execution (auto_tool_exec=False) ===")
+ai2 = OpenRouterClient(tools=[get_weather])
+response = ai2.invoke(model=gpt_4o_mini, query=Message("What's the weather in Paris?"), auto_tool_exec=False)
+
+if response.tool_calls:
+    print(f"Tool requested: {response.tool_calls[0].name}")
+    print(f"Arguments: {response.tool_calls[0].arguments}")
+
+    response_with_result = ai2.execute_tool(response, tool_index=0)
+    print(f"Tool result: {response_with_result.tool_calls[0].result}")
+
+    final_response = ai2.invoke(model=gpt_4o_mini, auto_tool_exec=False)
+    print(f"Final response: {final_response.text}")
+else:
+    print("No tools called")
 
 
