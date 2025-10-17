@@ -82,7 +82,6 @@ class OpenRouterClient:
         model: LLMModel,
         query: Message,
         tools: list[tool_model] = None,
-        max_tools_loop: int = 3,
         provider: ProviderConfig = None,
         temperature: float = 0.3
     ) -> Message:
@@ -90,48 +89,31 @@ class OpenRouterClient:
         self._memory.append(query)
         client = OpenRouterProvider()
         
-        for i in range(max_tools_loop):
-            reply = client.invoke(
-                model=model,
-                temperature=temperature,
-                system_prompt=self._system_prompt,
-                querys=self._memory,
-                tools=self.tools + tools,
-                provider=provider,
-            )
-            reply.answered_by = model
-            self._memory.append(reply)
+        reply = client.invoke(
+            model=model,
+            temperature=temperature,
+            system_prompt=self._system_prompt,
+            querys=self._memory,
+            tools=self.tools + tools,
+            provider=provider,
+        )
+        reply.answered_by = model
+        self._memory.append(reply)
 
-            # Execute tools
-            if reply.tool_calls:
-                for requested_tool in reply.tool_calls:
-                    args = requested_tool.arguments
-                    if isinstance(args, str):
-                        args = json.loads(args)
+        # Execute tools
+        if reply.tool_calls:
+            for requested_tool in reply.tool_calls:
+                args = requested_tool.arguments
+                if isinstance(args, str):
+                    args = json.loads(args)
 
-                    for tool in (self.tools + tools):
-                        if tool.name == requested_tool.name:
-                            result = tool(**args)
-                            requested_tool.result = result
-                            break
-                    else:
-                        return reply
-            
-            # If normal reply, do nothing
-            else:           
-                break
-        
-        # If over max execution, send message without tools
-        else:
-            reply = client.invoke(
-                model=model,
-                temperature=temperature,
-                system_prompt=self._system_prompt,
-                querys=self._memory,
-                provider=provider,
-            )
-            reply.answered_by = model
-            self._memory.append(reply)
+                for tool in (self.tools + tools):
+                    if tool.name == requested_tool.name:
+                        result = tool(**args)
+                        requested_tool.result = result
+                        break
+                else:
+                    return reply
 
         return reply
     
@@ -261,3 +243,4 @@ class OpenRouterClient:
         self._memory.append(Message(text=reply.model_dump_json(), role=Role.ai, answered_by=model))
         
         return reply
+
