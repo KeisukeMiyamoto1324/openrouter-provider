@@ -123,8 +123,6 @@ class OpenRouterProvider:
                 reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
     
-    
-        
     def invoke_stream(
         self,
         model: LLMModel,

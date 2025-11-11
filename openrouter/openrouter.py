@@ -58,7 +58,7 @@ class OpenRouterClient:
 
         return reply_copy
 
-    def execute_tool(self, reply: Message, tool_index: int) -> Message:
+    def execute_tool(self, reply: Message, tool_index: int, tools: List[tool_model] = []) -> Message:
         if not reply.tool_calls:
             return reply
 
@@ -71,7 +71,7 @@ class OpenRouterClient:
         if isinstance(args, str):
             args = json.loads(args)
 
-        all_tools = self.tools
+        all_tools = self.tools + tools
         for tool in all_tools:
             if tool.name == requested_tool.name:
                 result = tool(**args)

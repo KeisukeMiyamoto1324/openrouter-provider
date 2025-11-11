@@ -27,6 +27,8 @@ if response.tool_calls:
 
     final_response = ai2.invoke(model=gpt_4o_mini, auto_tool_exec=False)
     print(f"Final response: {final_response.text}")
+    
+    ai.print_memory()
 else:
     print("No tools called")
 
