@@ -1,4 +1,5 @@
 from __future__ import annotations
+import json
 import os
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Literal, Iterator, AsyncIterator
@@ -6,7 +7,7 @@ from typing import List, Optional, Literal, Iterator, AsyncIterator
 from dotenv import load_dotenv
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from openrouter.message import Message, Role, ToolCall
 from openrouter.tool import tool_model
@@ -260,6 +261,19 @@ class OpenRouterProvider:
             extra_body={"provider": provider_dict},
         )
 
-        return json_schema.model_validate_json(response.choices[0].message.content)
-        
+        content = response.choices[0].message.content
+
+        try:
+            return json_schema.model_validate_json(content)
+        except ValidationError:
+            formatted_content = content
+            try:
+                parsed = json.loads(content)
+                formatted_content = json.dumps(parsed, indent=2, ensure_ascii=False)
+            except json.JSONDecodeError:
+                pass
+            print("structured_output validation failed, response content:")
+            print(formatted_content)
+            raise
+
     
