@@ -231,7 +231,26 @@ class OpenRouterProvider:
                 for item in obj:
                     add_additional_properties_false(item)
         
+        def ensure_required_properties(obj):
+            if isinstance(obj, dict):
+                properties = obj.get("properties")
+                if isinstance(properties, dict):
+                    keys = list(properties.keys())
+                    existing_required = obj.get("required")
+                    if isinstance(existing_required, list):
+                        required_set = set(existing_required)
+                    else:
+                        required_set = set()
+                    required_set.update(keys)
+                    obj["required"] = list(required_set)
+                for value in obj.values():
+                    ensure_required_properties(value)
+            elif isinstance(obj, list):
+                for item in obj:
+                    ensure_required_properties(item)
+
         add_additional_properties_false(schema)
+        ensure_required_properties(schema)
         
         response = self.client.chat.completions.create(
             model=model.name,
