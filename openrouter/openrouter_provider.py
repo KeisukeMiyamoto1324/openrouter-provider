@@ -4,7 +4,6 @@ import os
 from dataclasses import dataclass, asdict
 from typing import List, Optional, Literal, Iterator, AsyncIterator
 
-from dotenv import load_dotenv
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, ValidationError
@@ -34,7 +33,6 @@ class ProviderConfig:
 
 class _OpenRouterProvider:
     def __init__(self) -> None:
-        load_dotenv()
         api_key = os.getenv("OPENROUTER_API_KEY")
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is not set in environment variables.")
