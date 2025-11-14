@@ -2,14 +2,14 @@ from __future__ import annotations
 import json
 import time
 from copy import deepcopy
-from typing import Iterator, AsyncIterator
+from typing import Iterator, AsyncIterator, List
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from openrouter.llms import *
 from openrouter.message import *
-from openrouter.openrouter_provider import *
+from openrouter.openrouter_provider import _OpenRouterProvider, ProviderConfig
 from openrouter.tool import *
 
 
@@ -138,7 +138,7 @@ class OpenRouterClient:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = OpenRouterProvider()
+        client = _OpenRouterProvider()
 
         reply = client.invoke(
             model=model,
@@ -177,7 +177,7 @@ class OpenRouterClient:
     ) -> Iterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = OpenRouterProvider()
+        client = _OpenRouterProvider()
         generator = client.invoke_stream(
             model=model,
             temperature=temperature,
@@ -206,7 +206,7 @@ class OpenRouterClient:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = OpenRouterProvider()
+        client = _OpenRouterProvider()
         reply = await client.async_invoke(
             model=model,
             temperature=temperature,
@@ -243,7 +243,7 @@ class OpenRouterClient:
     ) -> AsyncIterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = OpenRouterProvider()
+        client = _OpenRouterProvider()
 
         stream = client.async_invoke_stream(
             model=model,
@@ -271,7 +271,7 @@ class OpenRouterClient:
         temperature: float = 0.3
     ) -> BaseModel:
         self._memory.append(query)
-        client = OpenRouterProvider()
+        client = _OpenRouterProvider()
         reply = client.structured_output(
             model=model,
             temperature=temperature,

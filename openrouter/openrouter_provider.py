@@ -9,7 +9,7 @@ from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
 from pydantic import BaseModel, ValidationError
 
-from openrouter.message import Message, Role, ToolCall
+from openrouter.message import Message, Role, _ToolCall
 from openrouter.tool import tool_model
 from openrouter.llms import LLMModel
 
@@ -32,7 +32,7 @@ class ProviderConfig:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
 
-class OpenRouterProvider:
+class _OpenRouterProvider:
     def __init__(self) -> None:
         load_dotenv()
         api_key = os.getenv("OPENROUTER_API_KEY")
@@ -121,7 +121,7 @@ class OpenRouterProvider:
         if response.choices[0].message.tool_calls:
             reply.role = Role.tool
             for tool in response.choices[0].message.tool_calls:
-                reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
+                reply.tool_calls.append(_ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
     
     def invoke_stream(
@@ -178,7 +178,7 @@ class OpenRouterProvider:
         if response.choices[0].message.tool_calls:
             reply.role = Role.tool
             for tool in response.choices[0].message.tool_calls:
-                reply.tool_calls.append(ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
+                reply.tool_calls.append(_ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
         
     async def async_invoke_stream(
@@ -232,27 +232,8 @@ class OpenRouterProvider:
                 for item in obj:
                     add_additional_properties_false(item)
         
-        def ensure_required_properties(obj):
-            if isinstance(obj, dict):
-                properties = obj.get("properties")
-                if isinstance(properties, dict):
-                    keys = list(properties.keys())
-                    existing_required = obj.get("required")
-                    if isinstance(existing_required, list):
-                        required_set = set(existing_required)
-                    else:
-                        required_set = set()
-                    required_set.update(keys)
-                    obj["required"] = list(required_set)
-                for value in obj.values():
-                    ensure_required_properties(value)
-            elif isinstance(obj, list):
-                for item in obj:
-                    ensure_required_properties(item)
-
         add_additional_properties_false(schema)
-        ensure_required_properties(schema)
-        
+
         response = self.client.chat.completions.create(
             model=model.name,
             temperature=temperature,

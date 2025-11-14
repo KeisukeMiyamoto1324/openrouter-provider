@@ -21,7 +21,7 @@ class Role(Enum):
 
 
 @dataclass
-class ToolCall:
+class _ToolCall:
     id: str
     name: str
     arguments: dict
@@ -43,7 +43,7 @@ class Message:
         self.text = text
         self.images = self._process_image(images)
         self.answered_by = answered_by
-        self.tool_calls: list[ToolCall] = []
+        self.tool_calls: list[_ToolCall] = []
         self.raw_response = raw_response
 
 
