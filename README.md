@@ -27,3 +27,18 @@ Please get your API key from [OpenRouter](https://openrouter.ai/) and set it as 
 ```bash
 OPENROUTER_API_KEY="your-api-key-here"
 ```
+
+## Basic Usage
+```python
+from openrouter import *
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenRouterClient(system_prompt="You are a friendly AI assistant.")
+model = LLMModel(name="openai/gpt-5")
+query = Message(text="Hello, how are you?")
+
+reply = client.invoke(model=model, query=query)
+print(reply.text)
+```
