@@ -34,6 +34,20 @@ class ProviderConfig:
         return {k: v for k, v in asdict(self).items() if v is not None}
 
 
+@dataclass
+class ReasoningConfig:
+    effort: Optional[Literal["xhigh", "high", "medium", "low", "minimal", "none"]] = None
+    max_tokens: Optional[int] = None
+    exclude: Optional[bool] = None
+    enabled: Optional[bool] = None
+
+    def to_dict(self) -> dict:
+        if self.effort is not None and self.max_tokens is not None:
+            raise ValueError("ReasoningConfig cannot set both effort and max_tokens.")
+
+        return {k: v for k, v in asdict(self).items() if v is not None}
+
+
 class _OpenRouterProvider:
     def __init__(self, base_url: str = DEFAULT_BASE_URL, api_key: Optional[str] = None) -> None:
         self.base_url = base_url
@@ -61,11 +75,23 @@ class _OpenRouterProvider:
         
         return api_key
 
-    def _make_extra_body(self, provider: ProviderConfig = None) -> dict:
-        if not provider:
+    def _make_extra_body(
+        self,
+        provider: Optional[ProviderConfig] = None,
+        reasoning: Optional[ReasoningConfig] = None
+    ) -> dict:
+        extra_body = {}
+
+        if provider:
+            extra_body["provider"] = provider.to_dict()
+
+        if reasoning:
+            extra_body["reasoning"] = reasoning.to_dict()
+
+        if not extra_body:
             return {}
 
-        return {"extra_body": {"provider": provider.to_dict()}}
+        return {"extra_body": extra_body}
 
     def make_prompt(
         self,
@@ -120,13 +146,14 @@ class _OpenRouterProvider:
         querys: list[Message],
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> Message:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        extra_body = self._make_extra_body(provider)
+        extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
         
         response = self.client.chat.completions.create(
             model=model.name,
@@ -151,13 +178,14 @@ class _OpenRouterProvider:
         querys: list[Message],
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> Iterator[ChatCompletionChunk]:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        extra_body = self._make_extra_body(provider)
+        extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
 
         response = self.client.chat.completions.create(
             model=model.name,
@@ -177,13 +205,14 @@ class _OpenRouterProvider:
         querys: list[Message],
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> Message:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        extra_body = self._make_extra_body(provider)
+        extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
@@ -208,13 +237,14 @@ class _OpenRouterProvider:
         querys: list[Message],
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> AsyncIterator[ChatCompletionChunk]:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        extra_body = self._make_extra_body(provider)
+        extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
@@ -234,11 +264,12 @@ class _OpenRouterProvider:
         system_prompt: Message,
         querys: list[Message],
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         json_schema: BaseModel = None,
         temperature: float = 0.3
     ) -> BaseModel:
         messages = self.make_prompt(system_prompt, querys)
-        extra_body = self._make_extra_body(provider)
+        extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
         
         schema = json_schema.model_json_schema()
         

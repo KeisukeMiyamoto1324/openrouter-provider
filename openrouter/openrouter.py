@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from openrouter.llms import *
 from openrouter.message import *
-from openrouter.openrouter_provider import DEFAULT_BASE_URL, _OpenRouterProvider, ProviderConfig
+from openrouter.openrouter_provider import DEFAULT_BASE_URL, _OpenRouterProvider, ProviderConfig, ReasoningConfig
 from openrouter.tool import *
 
 
@@ -143,6 +143,7 @@ class OpenRouterClient:
         query: Message = None,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3,
         auto_tool_exec: bool = True
     ) -> Message:
@@ -158,6 +159,7 @@ class OpenRouterClient:
             querys=self._memory,
             tools=self.tools + tools,
             provider=provider,
+            reasoning=reasoning,
         )
         reply.answered_by = model
         self._memory.append(reply)
@@ -171,7 +173,8 @@ class OpenRouterClient:
                 temperature=temperature,
                 system_prompt=self._system_prompt,
                 querys=self._memory,
-                provider=provider
+                provider=provider,
+                reasoning=reasoning
             )
             reply.answered_by = model
             self._memory.append(reply)
@@ -184,6 +187,7 @@ class OpenRouterClient:
         query: Message,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> Iterator[str]:
         tools = tools or []
@@ -195,7 +199,8 @@ class OpenRouterClient:
             system_prompt=self._system_prompt,
             querys=self._memory,
             tools=self.tools + tools,
-            provider=provider
+            provider=provider,
+            reasoning=reasoning
         )
         
         text = ""
@@ -211,6 +216,7 @@ class OpenRouterClient:
         query: Message = None,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3,
         auto_tool_exec: bool = True
     ) -> Message:
@@ -224,7 +230,8 @@ class OpenRouterClient:
             system_prompt=self._system_prompt,
             querys=self._memory,
             tools=self.tools + tools,
-            provider=provider
+            provider=provider,
+            reasoning=reasoning
         )
         reply.answered_by = model
         self._memory.append(reply)
@@ -237,7 +244,8 @@ class OpenRouterClient:
                 system_prompt=self._system_prompt,
                 querys=self._memory,
                 tools=self.tools + tools,
-                provider=provider
+                provider=provider,
+                reasoning=reasoning
             )
             reply.answered_by = model
             self._memory.append(reply)
@@ -250,6 +258,7 @@ class OpenRouterClient:
         query: Message,
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         temperature: float = 0.3
     ) -> AsyncIterator[str]:
         tools = tools or []
@@ -262,7 +271,8 @@ class OpenRouterClient:
             system_prompt=self._system_prompt,
             querys=self._memory,
             tools=self.tools + tools,
-            provider=provider
+            provider=provider,
+            reasoning=reasoning
         )
 
         text = ""
@@ -278,6 +288,7 @@ class OpenRouterClient:
         model: LLMModel,
         query: Message,
         provider: ProviderConfig = None,
+        reasoning: ReasoningConfig = None,
         json_schema: BaseModel = None,
         temperature: float = 0.3
     ) -> BaseModel:
@@ -289,6 +300,7 @@ class OpenRouterClient:
             system_prompt=self._system_prompt,
             querys=self._memory,
             provider=provider,
+            reasoning=reasoning,
             json_schema=json_schema
         )
         
