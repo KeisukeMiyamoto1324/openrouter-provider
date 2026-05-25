@@ -116,6 +116,9 @@ class _OpenRouterProvider:
                 assistant_msg = {"role": "assistant"}
                 assistant_msg["content"] = query.text or None
 
+                if query.reasoning:
+                    assistant_msg["reasoning"] = query.reasoning
+
                 if query.tool_calls:
                     assistant_msg["tool_calls"] = [
                         {
@@ -163,11 +166,17 @@ class _OpenRouterProvider:
             **extra_body,
         )
 
-        reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+        response_message = response.choices[0].message
+        reply = Message(
+            text=response_message.content,
+            role=Role.ai,
+            raw_response=response,
+            reasoning=getattr(response_message, "reasoning", None),
+        )
 
-        if response.choices[0].message.tool_calls:
+        if response_message.tool_calls:
             reply.role = Role.tool
-            for tool in response.choices[0].message.tool_calls:
+            for tool in response_message.tool_calls:
                 reply.tool_calls.append(_ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
     
@@ -222,11 +231,17 @@ class _OpenRouterProvider:
             **extra_body
         )
 
-        reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
+        response_message = response.choices[0].message
+        reply = Message(
+            text=response_message.content,
+            role=Role.ai,
+            raw_response=response,
+            reasoning=getattr(response_message, "reasoning", None),
+        )
 
-        if response.choices[0].message.tool_calls:
+        if response_message.tool_calls:
             reply.role = Role.tool
-            for tool in response.choices[0].message.tool_calls:
+            for tool in response_message.tool_calls:
                 reply.tool_calls.append(_ToolCall(id=tool.id, name=tool.function.name, arguments=tool.function.arguments))
         return reply
         

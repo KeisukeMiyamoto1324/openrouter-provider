@@ -37,11 +37,13 @@ class Message:
         role: Role = Role.user,
         answered_by: Optional[LLMModel] = None,
         raw_response: Optional[ChatCompletion] = None,
-        id: Optional[str] = None
+        id: Optional[str] = None,
+        reasoning: Optional[str] = None
     ) -> None:
         self.id = id if id is not None else str(uuid.uuid4())
         self.role = role
         self.text = text
+        self.reasoning = reasoning
         self.images = self._process_image(images)
         self.answered_by = answered_by
         self.tool_calls: list[_ToolCall] = []

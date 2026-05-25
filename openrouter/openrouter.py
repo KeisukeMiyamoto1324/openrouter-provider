@@ -204,11 +204,22 @@ class OpenRouterClient:
         )
         
         text = ""
+        reasoning_text = ""
         for token in generator:
-            text += token.choices[0].delta.content
-            yield token.choices[0].delta.content
+            delta = token.choices[0].delta.content or ""
+            reasoning_delta = getattr(token.choices[0].delta, "reasoning", None) or ""
+            text += delta
+            reasoning_text += reasoning_delta
 
-        self._memory.append(Message(text=text, role=Role.ai, answered_by=model))
+            if delta:
+                yield delta
+
+        self._memory.append(Message(
+            text=text,
+            role=Role.ai,
+            answered_by=model,
+            reasoning=reasoning_text or None,
+        ))
         
     async def async_invoke(
         self,
@@ -276,12 +287,22 @@ class OpenRouterClient:
         )
 
         text = ""
+        reasoning_text = ""
         async for chunk in stream:
             delta = chunk.choices[0].delta.content or ""
+            reasoning_delta = getattr(chunk.choices[0].delta, "reasoning", None) or ""
             text += delta
-            yield delta
+            reasoning_text += reasoning_delta
 
-        self._memory.append(Message(text=text, role=Role.ai, answered_by=model))
+            if delta:
+                yield delta
+
+        self._memory.append(Message(
+            text=text,
+            role=Role.ai,
+            answered_by=model,
+            reasoning=reasoning_text or None,
+        ))
         
     def structured_output(
         self,
