@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from openrouter.openrouter_provider import ProviderConfig
 
 @dataclass
 class LLMModel:
@@ -36,6 +37,10 @@ gemini_2_0_flash = LLMModel(name='google/gemini-2.0-flash-001', input_cost=0.1, 
 gemini_2_5_flash_lite = LLMModel(name='google/gemini-2.5-flash-lite', input_cost=0.1, output_cost=0.4)
 gemini_2_5_flash = LLMModel(name='google/gemini-2.5-flash', input_cost=0.3, output_cost=2.5)
 gemini_2_5_pro = LLMModel(name='google/gemini-2.5-pro', input_cost=1.25, output_cost=10)
+gemini_3_1_flash_lite = LLMModel(name='google/gemini-3.1-flash-lite', input_cost=0.25, output_cost=1.5)
+gemini_3_flash_preview = LLMModel(name='google/gemini-3-flash-preview', input_cost=0.5, output_cost=3)
+gemini_3_5_flash = LLMModel(name='google/gemini-3.5-flash', input_cost=1.5, output_cost=9)
+gemini_3_1_pro = LLMModel(name='google/gemini-3.1-pro-preview', input_cost=2, output_cost=12)
 
 # Deepseek
 deepseek_v3_free = LLMModel(name='deepseek/deepseek-chat-v3-0324:free', input_cost=0, output_cost=0)
@@ -48,6 +53,7 @@ deepseek_v3_1 = LLMModel(name='deepseek/deepseek-chat-v3.1', input_cost=0.55, ou
 grok_3_mini = LLMModel(name='x-ai/grok-3-mini-beta', input_cost=0.3, output_cost=0.5)
 grok_3 = LLMModel(name='x-ai/grok-3-beta', input_cost=3, output_cost=15)
 grok_4 = LLMModel(name='x-ai/grok-4', input_cost=3, output_cost=15)
+grok_4_3 = LLMModel(name='x-ai/grok-4.3', input_cost=1.25, output_cost=2.5)
 
 # Microsoft
 mai_ds_r1_free = LLMModel(name="microsoft/mai-ds-r1:free", input_cost=0, output_cost=0)
@@ -56,4 +62,8 @@ mai_ds_r1_free = LLMModel(name="microsoft/mai-ds-r1:free", input_cost=0, output_
 llama_4_maverick_free = LLMModel(name="meta-llama/llama-4-maverick:free", input_cost=0, output_cost=0)
 llama_4_scout = LLMModel(name="meta-llama/llama-4-scout", input_cost=0.11, output_cost=0.34)
 mistral_small_3_1_24B_free = LLMModel(name="mistralai/mistral-small-3.1-24b-instruct:free", input_cost=0, output_cost=0)
+
+# Providers
+groq = ProviderConfig(order=["groq"], allow_fallbacks=True)
+cerebras =ProviderConfig(order=["cerebras/fp16"], allow_fallbacks=True)
 
