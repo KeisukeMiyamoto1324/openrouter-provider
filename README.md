@@ -42,3 +42,19 @@ query = Message(text="Hello, how are you?")
 reply = client.invoke(model=model, query=query)
 print(reply.text)
 ```
+
+## OpenAI-Compatible Endpoints
+```python
+from openrouter import *
+
+client = OpenRouterClient(
+    system_prompt="You are a helpful assistant.",
+    base_url="http://localhost:11434/v1",
+)
+
+model = LLMModel(name="llama3.1")
+query = Message(text="Hello, how are you?")
+
+reply = client.invoke(model=model, query=query)
+print(reply.text)
+```

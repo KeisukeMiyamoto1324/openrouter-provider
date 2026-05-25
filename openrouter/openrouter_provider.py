@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass, asdict
-from typing import List, Optional, Literal, Iterator, AsyncIterator
+from typing import List, Optional, Literal, Iterator, AsyncIterator, TYPE_CHECKING
 
 from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionChunk
@@ -10,7 +10,12 @@ from pydantic import BaseModel, ValidationError
 
 from openrouter.message import Message, Role, _ToolCall
 from openrouter.tool import tool_model
-from openrouter.llms import LLMModel
+
+if TYPE_CHECKING:
+    from openrouter.llms import LLMModel
+
+
+DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 @dataclass
@@ -30,18 +35,37 @@ class ProviderConfig:
 
 
 class _OpenRouterProvider:
-    def __init__(self) -> None:
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise ValueError("OPENROUTER_API_KEY is not set in environment variables.")
+    def __init__(self, base_url: str = DEFAULT_BASE_URL, api_key: Optional[str] = None) -> None:
+        self.base_url = base_url
+        api_key = self._resolve_api_key(api_key)
+        
         self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
+            base_url=self.base_url,
             api_key=api_key,
         )
         self.async_client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
+            base_url=self.base_url,
             api_key=api_key,
         )
+
+    def _resolve_api_key(self, api_key: Optional[str] = None) -> str:
+        if api_key:
+            return api_key
+
+        if self.base_url != DEFAULT_BASE_URL:
+            return "dummy"
+
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("OPENROUTER_API_KEY is not set in environment variables.")
+        
+        return api_key
+
+    def _make_extra_body(self, provider: ProviderConfig = None) -> dict:
+        if not provider:
+            return {}
+
+        return {"extra_body": {"provider": provider.to_dict()}}
 
     def make_prompt(
         self,
@@ -102,14 +126,14 @@ class _OpenRouterProvider:
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        provider_dict = provider.to_dict() if provider else None
+        extra_body = self._make_extra_body(provider)
         
         response = self.client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
             tools=tool_defs,
-            extra_body={"provider": provider_dict},
+            **extra_body,
         )
 
         reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
@@ -133,15 +157,15 @@ class _OpenRouterProvider:
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        provider_dict = provider.to_dict() if provider else None
+        extra_body = self._make_extra_body(provider)
 
         response = self.client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
             tools=tool_defs,
-            extra_body={"provider": provider_dict},
-            stream=True
+            stream=True,
+            **extra_body
         )
         
         return response
@@ -159,14 +183,14 @@ class _OpenRouterProvider:
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        provider_dict = provider.to_dict() if provider else None
+        extra_body = self._make_extra_body(provider)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
             tools=tool_defs,
-            extra_body={"provider": provider_dict}
+            **extra_body
         )
 
         reply = Message(text=response.choices[0].message.content, role=Role.ai, raw_response=response)
@@ -190,15 +214,15 @@ class _OpenRouterProvider:
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
-        provider_dict = provider.to_dict() if provider else None
+        extra_body = self._make_extra_body(provider)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
             tools=tool_defs,
-            extra_body={"provider": provider_dict},
-            stream=True
+            stream=True,
+            **extra_body
         )
 
         async for chunk in response:
@@ -214,7 +238,7 @@ class _OpenRouterProvider:
         temperature: float = 0.3
     ) -> BaseModel:
         messages = self.make_prompt(system_prompt, querys)
-        provider_dict = provider.to_dict() if provider else None
+        extra_body = self._make_extra_body(provider)
         
         schema = json_schema.model_json_schema()
         
@@ -235,7 +259,7 @@ class _OpenRouterProvider:
             temperature=temperature,
             messages=messages,
             response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": schema}},
-            extra_body={"provider": provider_dict},
+            **extra_body,
         )
 
         content = response.choices[0].message.content

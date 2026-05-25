@@ -4,12 +4,13 @@ from enum import Enum
 from io import BytesIO
 import base64
 import uuid
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 
 from PIL import Image
 from openai.types.chat import ChatCompletion
 
-from openrouter.llms import LLMModel
+if TYPE_CHECKING:
+    from openrouter.llms import LLMModel
 
 
 class Role(Enum):

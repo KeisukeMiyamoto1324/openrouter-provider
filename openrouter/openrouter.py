@@ -2,14 +2,14 @@ from __future__ import annotations
 import json
 import time
 from copy import deepcopy
-from typing import Iterator, AsyncIterator, List
+from typing import Iterator, AsyncIterator, List, Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
 from openrouter.llms import *
 from openrouter.message import *
-from openrouter.openrouter_provider import _OpenRouterProvider, ProviderConfig
+from openrouter.openrouter_provider import DEFAULT_BASE_URL, _OpenRouterProvider, ProviderConfig
 from openrouter.tool import *
 
 
@@ -23,12 +23,23 @@ You are an intelligent AI. You must follow the system_instruction below, which i
 """
 
 class OpenRouterClient:
-    def __init__(self, system_prompt: str = "", tools: list[tool_model] = None) -> None:
+    def __init__(
+        self,
+        system_prompt: str = "",
+        tools: list[tool_model] = None,
+        base_url: str = DEFAULT_BASE_URL,
+        api_key: Optional[str] = None
+    ) -> None:
         load_dotenv()
         
         self._memory: list[Message] = []
         self.tools: list[tool_model] = tools or []
+        self.base_url = base_url
+        self.api_key = api_key
         self.set_system_prompt(system_prompt)
+
+    def _make_provider(self) -> _OpenRouterProvider:
+        return _OpenRouterProvider(base_url=self.base_url, api_key=self.api_key)
         
     def set_system_prompt(self, prompt: str) -> None:
         month, day, year = time.localtime()[:3]
@@ -138,7 +149,7 @@ class OpenRouterClient:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = _OpenRouterProvider()
+        client = self._make_provider()
 
         reply = client.invoke(
             model=model,
@@ -177,7 +188,7 @@ class OpenRouterClient:
     ) -> Iterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = _OpenRouterProvider()
+        client = self._make_provider()
         generator = client.invoke_stream(
             model=model,
             temperature=temperature,
@@ -206,7 +217,7 @@ class OpenRouterClient:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = _OpenRouterProvider()
+        client = self._make_provider()
         reply = await client.async_invoke(
             model=model,
             temperature=temperature,
@@ -243,7 +254,7 @@ class OpenRouterClient:
     ) -> AsyncIterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = _OpenRouterProvider()
+        client = self._make_provider()
 
         stream = client.async_invoke_stream(
             model=model,
@@ -271,7 +282,7 @@ class OpenRouterClient:
         temperature: float = 0.3
     ) -> BaseModel:
         self._memory.append(query)
-        client = _OpenRouterProvider()
+        client = self._make_provider()
         reply = client.structured_output(
             model=model,
             temperature=temperature,
@@ -284,4 +295,3 @@ class OpenRouterClient:
         self._memory.append(Message(text=reply.model_dump_json(), role=Role.ai, answered_by=model))
         
         return reply
-
