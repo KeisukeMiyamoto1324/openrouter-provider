@@ -5,7 +5,7 @@ from openrouter.openrouter import *
 
 ai = OpenRouterClient(system_prompt="Please answer in English.")
 query = Message(text="Which is larger, 9.11 or 9.9? Explain briefly.")
-reasoning = ReasoningConfig(max_tokens=512, exclude=False, enabled=False)
+reasoning = ReasoningConfig(max_tokens=512, exclude=False, enabled=True)
 
 response = ai.invoke(
     model=gemini_3_flash_preview,

@@ -15,6 +15,17 @@ class ReasoningConfigTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             reasoning.to_dict()
 
+    def test_to_dict_normalizes_disabled_reasoning_to_effort_none(self) -> None:
+        reasoning = ReasoningConfig(max_tokens=2000, exclude=False, enabled=False)
+
+        self.assertEqual(reasoning.to_dict(), {"effort": "none", "exclude": False})
+
+    def test_to_think_maps_reasoning_values(self) -> None:
+        self.assertFalse(ReasoningConfig(enabled=False).to_think())
+        self.assertEqual(ReasoningConfig(effort="xhigh").to_think(), "high")
+        self.assertEqual(ReasoningConfig(effort="minimal").to_think(), "low")
+        self.assertTrue(ReasoningConfig(max_tokens=2000).to_think())
+
     def test_make_extra_body_merges_provider_and_reasoning(self) -> None:
         client = _OpenRouterProvider(base_url="http://localhost:11434/v1")
         provider = ProviderConfig(order=["cerebras"], allow_fallbacks=False)
@@ -28,8 +39,20 @@ class ReasoningConfigTest(unittest.TestCase):
                 "extra_body": {
                     "provider": {"order": ["cerebras"], "allow_fallbacks": False},
                     "reasoning": {"max_tokens": 2000, "exclude": True},
+                    "think": True,
                 }
             },
+        )
+
+    def test_make_extra_body_sends_reasoning_and_think_for_disabled_reasoning(self) -> None:
+        client = _OpenRouterProvider(base_url="http://localhost:11434/v1")
+        reasoning = ReasoningConfig(enabled=False)
+
+        extra_body = client._make_extra_body(reasoning=reasoning)
+
+        self.assertEqual(
+            extra_body,
+            {"extra_body": {"reasoning": {"effort": "none"}, "think": False}},
         )
 
 

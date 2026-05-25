@@ -42,10 +42,34 @@ class ReasoningConfig:
     enabled: Optional[bool] = None
 
     def to_dict(self) -> dict:
+        if self.enabled is False:
+            reasoning = {"effort": "none"}
+            if self.exclude is not None:
+                reasoning["exclude"] = self.exclude
+            return reasoning
+
         if self.effort is not None and self.max_tokens is not None:
             raise ValueError("ReasoningConfig cannot set both effort and max_tokens.")
 
         return {k: v for k, v in asdict(self).items() if v is not None}
+
+    def to_think(self) -> Optional[bool | Literal["high", "medium", "low"]]:
+        if self.enabled is False or self.effort == "none":
+            return False
+
+        if self.effort in ["high", "medium", "low"]:
+            return self.effort
+
+        if self.effort == "minimal":
+            return "low"
+
+        if self.effort == "xhigh":
+            return "high"
+
+        if self.enabled is True or self.max_tokens is not None:
+            return True
+
+        return None
 
 
 class _OpenRouterProvider:
@@ -87,6 +111,9 @@ class _OpenRouterProvider:
 
         if reasoning:
             extra_body["reasoning"] = reasoning.to_dict()
+            think = reasoning.to_think()
+            if think is not None:
+                extra_body["think"] = think
 
         if not extra_body:
             return {}
