@@ -28,7 +28,8 @@ class OpenRouterClient:
         system_prompt: str = "",
         tools: list[tool_model] = None,
         base_url: str = DEFAULT_BASE_URL,
-        api_key: Optional[str] = None
+        api_key: Optional[str] = None,
+        timeout: Optional[float] = None
     ) -> None:
         load_dotenv()
         
@@ -36,10 +37,18 @@ class OpenRouterClient:
         self.tools: list[tool_model] = tools or []
         self.base_url = base_url
         self.api_key = api_key
+        self.timeout = timeout
         self.set_system_prompt(system_prompt)
 
-    def _make_provider(self) -> _OpenRouterProvider:
-        return _OpenRouterProvider(base_url=self.base_url, api_key=self.api_key)
+    def _resolve_timeout(self, timeout: Optional[float] = None) -> Optional[float]:
+        return self.timeout if timeout is None else timeout
+
+    def _make_provider(self, timeout: Optional[float] = None) -> _OpenRouterProvider:
+        return _OpenRouterProvider(
+            base_url=self.base_url,
+            api_key=self.api_key,
+            timeout=self._resolve_timeout(timeout=timeout),
+        )
         
     def set_system_prompt(self, prompt: str) -> None:
         month, day, year = time.localtime()[:3]
@@ -145,12 +154,14 @@ class OpenRouterClient:
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
         temperature: float = 0.3,
-        auto_tool_exec: bool = True
+        auto_tool_exec: bool = True,
+        timeout: Optional[float] = None
     ) -> Message:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = self._make_provider()
+        timeout = self._resolve_timeout(timeout=timeout)
+        client = self._make_provider(timeout=timeout)
 
         reply = client.invoke(
             model=model,
@@ -160,6 +171,7 @@ class OpenRouterClient:
             tools=self.tools + tools,
             provider=provider,
             reasoning=reasoning,
+            timeout=timeout,
         )
         reply.answered_by = model
         self._memory.append(reply)
@@ -174,7 +186,8 @@ class OpenRouterClient:
                 system_prompt=self._system_prompt,
                 querys=self._memory,
                 provider=provider,
-                reasoning=reasoning
+                reasoning=reasoning,
+                timeout=timeout,
             )
             reply.answered_by = model
             self._memory.append(reply)
@@ -188,11 +201,13 @@ class OpenRouterClient:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> Iterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = self._make_provider()
+        timeout = self._resolve_timeout(timeout=timeout)
+        client = self._make_provider(timeout=timeout)
         generator = client.invoke_stream(
             model=model,
             temperature=temperature,
@@ -200,7 +215,8 @@ class OpenRouterClient:
             querys=self._memory,
             tools=self.tools + tools,
             provider=provider,
-            reasoning=reasoning
+            reasoning=reasoning,
+            timeout=timeout,
         )
         
         text = ""
@@ -229,12 +245,14 @@ class OpenRouterClient:
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
         temperature: float = 0.3,
-        auto_tool_exec: bool = True
+        auto_tool_exec: bool = True,
+        timeout: Optional[float] = None
     ) -> Message:
         tools = tools or []
         if query is not None:
             self._memory.append(query)
-        client = self._make_provider()
+        timeout = self._resolve_timeout(timeout=timeout)
+        client = self._make_provider(timeout=timeout)
         reply = await client.async_invoke(
             model=model,
             temperature=temperature,
@@ -242,7 +260,8 @@ class OpenRouterClient:
             querys=self._memory,
             tools=self.tools + tools,
             provider=provider,
-            reasoning=reasoning
+            reasoning=reasoning,
+            timeout=timeout,
         )
         reply.answered_by = model
         self._memory.append(reply)
@@ -256,7 +275,8 @@ class OpenRouterClient:
                 querys=self._memory,
                 tools=self.tools + tools,
                 provider=provider,
-                reasoning=reasoning
+                reasoning=reasoning,
+                timeout=timeout,
             )
             reply.answered_by = model
             self._memory.append(reply)
@@ -270,11 +290,13 @@ class OpenRouterClient:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> AsyncIterator[str]:
         tools = tools or []
         self._memory.append(query)
-        client = self._make_provider()
+        timeout = self._resolve_timeout(timeout=timeout)
+        client = self._make_provider(timeout=timeout)
 
         stream = client.async_invoke_stream(
             model=model,
@@ -283,7 +305,8 @@ class OpenRouterClient:
             querys=self._memory,
             tools=self.tools + tools,
             provider=provider,
-            reasoning=reasoning
+            reasoning=reasoning,
+            timeout=timeout,
         )
 
         text = ""
@@ -311,10 +334,12 @@ class OpenRouterClient:
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
         json_schema: BaseModel = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> BaseModel:
         self._memory.append(query)
-        client = self._make_provider()
+        timeout = self._resolve_timeout(timeout=timeout)
+        client = self._make_provider(timeout=timeout)
         reply = client.structured_output(
             model=model,
             temperature=temperature,
@@ -322,7 +347,8 @@ class OpenRouterClient:
             querys=self._memory,
             provider=provider,
             reasoning=reasoning,
-            json_schema=json_schema
+            json_schema=json_schema,
+            timeout=timeout,
         )
         
         self._memory.append(Message(text=reply.model_dump_json(), role=Role.ai, answered_by=model))

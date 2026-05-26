@@ -73,17 +73,25 @@ class ReasoningConfig:
 
 
 class _OpenRouterProvider:
-    def __init__(self, base_url: str = DEFAULT_BASE_URL, api_key: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        base_url: str = DEFAULT_BASE_URL,
+        api_key: Optional[str] = None,
+        timeout: Optional[float] = None
+    ) -> None:
         self.base_url = base_url
         api_key = self._resolve_api_key(api_key)
+        timeout_options = self._make_timeout_options(timeout=timeout)
         
         self.client = OpenAI(
             base_url=self.base_url,
             api_key=api_key,
+            **timeout_options,
         )
         self.async_client = AsyncOpenAI(
             base_url=self.base_url,
             api_key=api_key,
+            **timeout_options,
         )
 
     def _resolve_api_key(self, api_key: Optional[str] = None) -> str:
@@ -119,6 +127,12 @@ class _OpenRouterProvider:
             return {}
 
         return {"extra_body": extra_body}
+
+    def _make_timeout_options(self, timeout: Optional[float] = None) -> dict:
+        if timeout is None:
+            return {}
+
+        return {"timeout": timeout}
 
     def make_prompt(
         self,
@@ -177,13 +191,15 @@ class _OpenRouterProvider:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> Message:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
         extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
+        timeout_options = self._make_timeout_options(timeout=timeout)
         
         response = self.client.chat.completions.create(
             model=model.name,
@@ -191,6 +207,7 @@ class _OpenRouterProvider:
             messages=messages,
             tools=tool_defs,
             **extra_body,
+            **timeout_options,
         )
 
         response_message = response.choices[0].message
@@ -215,13 +232,15 @@ class _OpenRouterProvider:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> Iterator[ChatCompletionChunk]:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
         extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
+        timeout_options = self._make_timeout_options(timeout=timeout)
 
         response = self.client.chat.completions.create(
             model=model.name,
@@ -229,7 +248,8 @@ class _OpenRouterProvider:
             messages=messages,
             tools=tool_defs,
             stream=True,
-            **extra_body
+            **extra_body,
+            **timeout_options,
         )
         
         return response
@@ -242,20 +262,23 @@ class _OpenRouterProvider:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> Message:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
         extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
+        timeout_options = self._make_timeout_options(timeout=timeout)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
             temperature=temperature,
             messages=messages,
             tools=tool_defs,
-            **extra_body
+            **extra_body,
+            **timeout_options,
         )
 
         response_message = response.choices[0].message
@@ -280,13 +303,15 @@ class _OpenRouterProvider:
         tools: list[tool_model] = None,
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> AsyncIterator[ChatCompletionChunk]:
         tools = tools or []
         messages = self.make_prompt(system_prompt, querys)
 
         tool_defs = [tool.tool_definition for tool in tools] if tools else None
         extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
+        timeout_options = self._make_timeout_options(timeout=timeout)
 
         response = await self.async_client.chat.completions.create(
             model=model.name,
@@ -294,7 +319,8 @@ class _OpenRouterProvider:
             messages=messages,
             tools=tool_defs,
             stream=True,
-            **extra_body
+            **extra_body,
+            **timeout_options,
         )
 
         async for chunk in response:
@@ -308,10 +334,12 @@ class _OpenRouterProvider:
         provider: ProviderConfig = None,
         reasoning: ReasoningConfig = None,
         json_schema: BaseModel = None,
-        temperature: float = 0.3
+        temperature: float = 0.3,
+        timeout: Optional[float] = None
     ) -> BaseModel:
         messages = self.make_prompt(system_prompt, querys)
         extra_body = self._make_extra_body(provider=provider, reasoning=reasoning)
+        timeout_options = self._make_timeout_options(timeout=timeout)
         
         schema = json_schema.model_json_schema()
         
@@ -333,6 +361,7 @@ class _OpenRouterProvider:
             messages=messages,
             response_format={"type": "json_schema", "json_schema": {"name": json_schema.__name__, "schema": schema}},
             **extra_body,
+            **timeout_options,
         )
 
         content = response.choices[0].message.content

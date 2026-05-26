@@ -43,6 +43,19 @@ reply = client.invoke(model=model, query=query)
 print(reply.text)
 ```
 
+## Timeout
+```python
+from openrouter import *
+
+client = OpenRouterClient(
+    system_prompt="You are a friendly AI assistant.",
+    timeout=30,
+)
+
+reply = client.invoke(model=LLMModel(name="openai/gpt-5"), query=Message(text="Hello"), timeout=10)
+print(reply.text)
+```
+
 ## OpenAI-Compatible Endpoints
 ```python
 from openrouter import *
